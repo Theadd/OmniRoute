@@ -235,6 +235,13 @@ export interface PluginContext {
   provider: string;
   apiKeyInfo?: unknown;
   metadata: Record<string, unknown>;
+  /**
+   * Incoming HTTP request headers (lower-cased keys), when available.
+   * Added so plugins can read per-turn routing signals (e.g. X-Route-Phase /
+   * X-Session-Id for the smart-loop plan/execute mechanism). Optional and
+   * backward-compatible: existing plugins that ignore it are unaffected.
+   */
+  headers?: Record<string, string>;
 }
 
 export interface PluginResult {

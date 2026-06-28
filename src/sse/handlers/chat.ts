@@ -537,6 +537,38 @@ export async function handleChat(
     return errorResponse(hookResponse.status, hookResponse.body as any);
   }
 
+  // ── Smart-loop: onComboResolve hook (ADR-0009 Revision 2026-06-28) ──
+  // Emit the already-declared-but-unused "onComboResolve" plugin event BEFORE
+  // task-aware routing and combo resolution.  The plugin system is the host of
+  // the logic (imports, tests, DistillationStrategy registry); the middleware
+  // hooks above are only the insertion point.  Plugins can mutate body (e.g.
+  // filter body.tools on PLAN turns) and/or set metadata.modelOverride to
+  // rewrite the model before combo selection.
+  try {
+    const { emitHookBlocking } = await import("@/lib/plugins/hooks");
+    const comboResolveCtx = {
+      requestId: reqId,
+      body,
+      model: modelStr,
+      headers: Object.fromEntries(request?.headers?.entries() || []),
+      metadata: {},
+    };
+    const comboResult = await emitHookBlocking("onComboResolve", comboResolveCtx);
+    if (comboResult?.body) {
+      body = comboResult.body as typeof body;
+    }
+    const modelOverride = (comboResult?.metadata as Record<string, unknown> | undefined)
+      ?.modelOverride;
+    if (typeof modelOverride === "string" && modelOverride !== modelStr) {
+      modelStr = modelOverride;
+    }
+  } catch (hookErr) {
+    log.debug(
+      "HOOK",
+      `onComboResolve error (non-fatal): ${hookErr instanceof Error ? hookErr.message : String(hookErr)}`
+    );
+  }
+
   // T05 — Task-Aware Smart Routing
   // Detect the semantic task type and optionally route to the optimal model
   let resolvedModelStr = modelStr;
