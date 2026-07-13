@@ -544,8 +544,12 @@ export async function handleChat(
   // hooks above are only the insertion point.  Plugins can mutate body (e.g.
   // filter body.tools on PLAN turns) and/or set metadata.modelOverride to
   // rewrite the model before combo selection.
+  //
+  // ADR-0009 Option A: direct import — the plugin system runs plugins in child
+  // processes, so registerHook() in a child doesn't affect the parent's hook Map.
+  // Import the handler directly from the gateway-plugin package to bridge the gap.
   try {
-    const { emitHookBlocking } = await import("@/lib/plugins/hooks");
+    const { onComboResolve } = await import("../../../../../packages/gateway-plugin/src/handler");
     const comboResolveCtx = {
       requestId: reqId,
       body,
@@ -553,7 +557,7 @@ export async function handleChat(
       headers: Object.fromEntries(request?.headers?.entries() || []),
       metadata: {},
     };
-    const comboResult = await emitHookBlocking("onComboResolve", comboResolveCtx);
+    const comboResult = await onComboResolve(comboResolveCtx);
     if (comboResult?.body) {
       body = comboResult.body as typeof body;
     }
