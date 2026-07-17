@@ -549,7 +549,10 @@ export async function handleChat(
   // processes, so registerHook() in a child doesn't affect the parent's hook Map.
   // Import the handler directly from the gateway-plugin package to bridge the gap.
   try {
-    const { onComboResolve } = await import("../../../../../packages/gateway-plugin/src/handler");
+    const { onComboResolve } = await import(
+      /* turbopackIgnore: true */
+      "../../../../../packages/gateway-plugin/src/handler"
+    );
     const comboResolveCtx = {
       requestId: reqId,
       body,

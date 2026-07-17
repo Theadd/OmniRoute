@@ -446,23 +446,7 @@ export async function handleChatCore({
   }
   // ── Plugin onRequest hook ──
   // Dynamic import cached by Node.js after first call — minimal overhead
-  // Normalize incoming headers to a plain lower-cased object so plugins get a
-  // stable shape regardless of whether clientRawRequest.headers is a Headers
-  // instance or an already-plain object. (Smart-loop reads X-Route-Phase here.)
-  const pluginHeaders: Record<string, string> = {};
-  const rawHeaders = clientRawRequest?.headers;
-  if (rawHeaders) {
-    if (typeof (rawHeaders as Headers).forEach === "function") {
-      (rawHeaders as Headers).forEach((value, key) => {
-        pluginHeaders[key.toLowerCase()] = value;
-      });
-    } else if (typeof rawHeaders === "object") {
-      for (const [key, value] of Object.entries(rawHeaders as Record<string, unknown>)) {
-        if (typeof value === "string") pluginHeaders[key.toLowerCase()] = value;
-        else if (Array.isArray(value)) pluginHeaders[key.toLowerCase()] = value.join(", ");
-      }
-    }
-  }
+  const pluginHeaders = normalizeHeaders(clientRawRequest?.headers);
   const pluginGate = await runPluginOnRequestHook({
     requestId: traceId,
     body,
@@ -3357,7 +3341,13 @@ export async function handleChatCore({
           // otherwise degenerate into a 429 rate-limit storm). Connection stays
           // active since only the specific model is unavailable. (#6827)
           const notFoundCooldownMs = COOLDOWN_MS.notFound;
-          lockModel(provider, errorConnectionId, currentModel, "model_not_found", notFoundCooldownMs);
+          lockModel(
+            provider,
+            errorConnectionId,
+            currentModel,
+            "model_not_found",
+            notFoundCooldownMs
+          );
           console.warn(
             `[provider] Node ${errorConnectionId} model not found (${statusCode}) for ${currentModel} - locking model for ${Math.ceil(notFoundCooldownMs / 1000)}s (connection stays active)`
           );
