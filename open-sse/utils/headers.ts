@@ -45,7 +45,7 @@ export function normalizeHeaders(h: unknown): Record<string, string> {
   // Final fallback: treat as plain object
   if (typeof h === "object") {
     for (const [k, v] of Object.entries(h as Record<string, unknown>)) {
-      out[k.toLowerCase()] = String(v ?? "");
+      out[k.toLowerCase()] = Array.isArray(v) ? v.join(", ") : String(v ?? "");
     }
   }
   return out;

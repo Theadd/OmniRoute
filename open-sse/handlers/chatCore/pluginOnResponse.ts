@@ -25,6 +25,7 @@ export async function runPluginOnResponseHook(args: {
   provider: string | null | undefined;
   apiKeyInfo: unknown;
   response: PluginOnResponsePayload;
+  headers?: Record<string, string>;
 }): Promise<void> {
   try {
     const { runOnResponse } = await import("@/lib/plugins/hooks");
@@ -35,6 +36,7 @@ export async function runPluginOnResponseHook(args: {
         model: args.model,
         provider: args.provider,
         apiKeyInfo: args.apiKeyInfo,
+        headers: args.headers,
         metadata: {},
       },
       args.response
